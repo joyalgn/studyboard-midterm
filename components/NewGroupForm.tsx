@@ -22,10 +22,26 @@ export default function NewGroupForm() {
   //    redirect to its detail page: router.push(`/groups/${newGroup.id}`)
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError("TODO: implement create-group submit handler");
-  }
+    setError("");
+    setIsSubmitting(true);
 
-  return (
+    const response = await fetch("/api/groups", {
+      method: "POST",
+      headers: { "Content-Type": "application/json"},
+      body: JSON.stringify({ name, subject, memberCount }),
+    });
+    
+    if (!response.ok ){
+      const data = await response.json();
+      setError(data.error ?? "Something went wromg");
+      setIsSubmitting(false);
+      return;
+    }
+
+    const newGroup = await response.json();
+    router.push('/groups/${newGroup.id}')
+  } 
+    return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label htmlFor="name" className="block text-sm font-medium">
