@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getGroupById, updateGroup, deleteGroup } from "@/lib/data";
-import { error } from "console";
+import { updateGroupSchema } from "@/lib/validations";
 
 // GET /api/groups/:id — read one group. Stays PUBLIC — no changes needed.
 export async function GET(
@@ -31,7 +31,6 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-
   if (!session){
     return NextResponse.json(
       {error: "Unauthorized"},
@@ -39,8 +38,16 @@ export async function PATCH(
     );
   }
 
-  const group = await getGroupById(params.id);
+  const body = await request.json();
+  const parsedResponse = updateGroupSchema.safeParse(body);
+  if ( !parsedResponse.success){
+    return NextResponse.json(
+      { error: parsedResponse.error.issues[0].message},
+      { status: 400 }
+    )
+  }
 
+  const group = await getGroupById(params.id);
   if (!group){
     return NextResponse.json(
       {error: "Group not found"},
@@ -55,7 +62,6 @@ export async function PATCH(
     );
   }
 
-  const body = await request.json();
   const updated = await updateGroup(params.id, body);
 
   if (!updated) {

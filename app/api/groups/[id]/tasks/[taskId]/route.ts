@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getGroupById, updateTask, deleteTask } from "@/lib/data";
+import { updateTaskSchema } from "@/lib/validations";
 
 // TODO (Step 15): PATCH /api/groups/:id/tasks/:taskId — update a task.
 // Requires authentication AND ownership of the parent group.
@@ -19,6 +20,15 @@ export async function PATCH(
     );
   }
 
+  const body = await request.json();
+  const parsedResponse = updateTaskSchema.safeParse(body)
+   if ( !parsedResponse.success){
+    return NextResponse.json(
+      { error: parsedResponse.error.issues[0].message},
+      { status: 400 }
+    );
+  }
+
   const group = await getGroupById(params.id);
 
   if (!group) {
@@ -33,9 +43,9 @@ export async function PATCH(
       {error: "Only the owner can can modify this task"},
       {status: 403}
     );
-  }
+  } 
 
-  const body = await request.json();
+
   const updated = await updateTask(params.id, params.taskId, body);
 
   if (!updated) {
