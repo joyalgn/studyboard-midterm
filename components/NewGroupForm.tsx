@@ -6,47 +6,64 @@ import Button from "@/components/Button";
 
 export default function NewGroupForm() {
   const router = useRouter();
+
   const [name, setName] = useState("");
   const [subject, setSubject] = useState("");
   const [memberCount, setMemberCount] = useState(1);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // TODO (Step 8): Implement the submit handler.
-  // 1. Prevent default submission and clear any previous error.
-  // 2. POST to /api/groups with { name, subject, memberCount } as JSON.
-  //    (fetch() automatically includes the NextAuth session cookie for
-  //    same-origin requests — that's how the API route knows who you are.)
-  // 3. If the response is not ok, show the error message from the body.
-  // 4. If it succeeded, parse the created group from the response and
-  //    redirect to its detail page: router.push(`/groups/${newGroup.id}`)
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
 
-    const response = await fetch("/api/groups", {
-      method: "POST",
-      headers: { "Content-Type": "application/json"},
-      body: JSON.stringify({ name, subject, memberCount }),
-    });
-    
-    if (!response.ok ){
-      const data = await response.json();
-      setError(data.error ?? "Something went wromg");
-      setIsSubmitting(false);
-      return;
-    }
+    try {
+      const response = await fetch("/api/groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          subject,
+          memberCount,
+        }),
+      });
 
-    const newGroup = await response.json();
-    router.push('/groups/${newGroup.id}')
-  } 
-    return (
+      const data = await response.json().catch(() => ({}));
+
+      console.log("Create Group Status:", response.status);
+      console.log("Create Group Response:", data);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            data.message ||
+            `Failed to create group. Status: ${response.status}`
+        );
+      }
+
+      router.push(`/groups/${data.id}`);
+      router.refresh();
+    } catch (err) {
+      console.error("Create Group Error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not create group"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
         <label htmlFor="name" className="block text-sm font-medium">
           Group Name
         </label>
+
         <input
           id="name"
           type="text"
@@ -61,6 +78,7 @@ export default function NewGroupForm() {
         <label htmlFor="subject" className="block text-sm font-medium">
           Subject
         </label>
+
         <input
           id="subject"
           type="text"
@@ -75,6 +93,7 @@ export default function NewGroupForm() {
         <label htmlFor="memberCount" className="block text-sm font-medium">
           Member Count
         </label>
+
         <input
           id="memberCount"
           type="number"
@@ -86,7 +105,11 @@ export default function NewGroupForm() {
         />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
 
       <Button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Creating..." : "Create Group"}

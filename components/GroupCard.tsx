@@ -12,7 +12,7 @@ export default function GroupCard({ group }: { group: Group }) {
     >
       <h3 className="text-lg font-semibold">{group.name}</h3>
       <p className="text-sm text-gray-500">{group.subject}</p>
-      <div className="mt-2 flex justify-between text-sm text-gray-600">
+      <div className="mt-2 flex justify-between text-sm text-blue-600">
         <span>{group.memberCount} members</span>
         <span>
           {completedCount}/{group.tasks.length} tasks done
